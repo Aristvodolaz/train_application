@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "223004176868",
+    "firebase_url": "https://patlaty-d6c72-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "patlaty-d6c72",
+    "storage_bucket": "patlaty-d6c72.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:223004176868:android:28d4440ac0cb0feee8d7f1",
+        "android_client_info": {
+          "package_name": "com.application.apps_for_individual_train"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4iASec2Y3A3EzcnaUzgNy85lpaO_2Tqc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
