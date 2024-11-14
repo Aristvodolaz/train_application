@@ -1,11 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-
-    id("org.jetbrains.kotlin.kapt") // Добавляем kapt плагин для Kotlin DSL
-    id("com.google.dagger.hilt.android")
-    alias(libs.plugins.google.gms.google.services) // Hilt плаг
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.dagger.hilt)
+    alias(libs.plugins.kotlin.kapt)
 }
+
 
 android {
     namespace = "com.application.apps_for_individual_train"
@@ -55,6 +55,7 @@ android {
 }
 
 dependencies {
+    // Основные зависимости Android и Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -63,29 +64,55 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.storage)
-    implementation(libs.firebase.database)
+
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+
+    // Hilt
+    implementation(libs.dagger.hilt.android)
     implementation(libs.androidx.runtime.livedata)
-    implementation(libs.firebase.firestore.ktx)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
+    kapt(libs.dagger.hilt.compiler)
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
-    // Hilt dependencies
-    implementation("com.google.dagger:hilt-android:2.45")
-    kapt("com.google.dagger:hilt-android-compiler:2.45")
+    // Coil для загрузки изображений в Compose
+    implementation("io.coil-kt:coil-compose:2.2.2")
 
-    // (Опционально) Для интеграции с ViewModel
-    implementation("androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03")
-    kapt("androidx.hilt:hilt-compiler:1.0.0")
-    implementation("androidx.navigation:navigation-compose:2.7.0")
-    implementation("androidx.navigation:navigation-compose:2.7.0")
-    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+    // Kotlin Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
+    // LiveData и ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.1")
+
+    // Material Design
+    implementation("com.google.android.material:material:1.9.0")
+
+    // Jetpack Compose dependencies
+    implementation("androidx.compose.ui:ui:1.7.5")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.7.5")
+    implementation("androidx.compose.material3:material3:1.1.0")
+    implementation("androidx.compose.material3:material3-window-size-class:1.1.0")
+    implementation("androidx.compose.material:material-icons-extended:1.1.0")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.7.5")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.7.5")
+
+    // Navigation for Compose
+    implementation("androidx.navigation:navigation-compose:2.8.3")
+
+    // FFmpeg для обработки аудио
+    implementation("com.arthenica:mobile-ffmpeg-full:4.4.LTS")
+
+    // Тестовые зависимости
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.5.2")
+    implementation("androidx.compose.material:material:1.5.1") // Укажите последнюю доступную версию
 
 }
