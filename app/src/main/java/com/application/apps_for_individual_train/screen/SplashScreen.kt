@@ -25,7 +25,7 @@ fun SplashScreen(navController: NavController) {
                 popUpTo(Screen.SplashScreen.route) { inclusive = true }
             }
         } else {
-            navController.navigate(Screen.AuthScreen.route) {
+            navController.navigate(Screen.MainScreen.route) {
                 popUpTo(Screen.SplashScreen.route) { inclusive = true }
             }
         }

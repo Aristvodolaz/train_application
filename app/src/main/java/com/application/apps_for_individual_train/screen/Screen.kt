@@ -1,10 +1,15 @@
 package com.application.apps_for_individual_train.screen
 
 sealed class Screen(val route: String) {
-    object AuthScreen: Screen("auth")
-    object MainScreen: Screen("main")
-    object SplashScreen: Screen("splash")
-    object WorkoutSelectionScreen: Screen("workout")
-    object ProfileScreen: Screen("profile")
+    object LoginScreen : Screen("login_screen")
+    object RegisterScreen : Screen("register_screen")
+    object MainScreen : Screen("main_screen")
+    object ProfileScreen : Screen("profile")
     object WorkoutScreen : Screen("workout_screen")
+
+    object WorkoutSelectionScreen : Screen("workout_selection_screen/{category}") {
+        fun createRoute(category: String) = "workout_selection_screen/$category"
+    }
+    object SplashScreen: Screen("splash")
+
 }

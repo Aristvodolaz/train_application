@@ -14,7 +14,7 @@
         android:theme="@style/Theme.Apps_for_individual_train"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".activity.StartActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Apps_for_individual_train">
@@ -24,6 +24,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>

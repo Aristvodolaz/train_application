@@ -65,17 +65,21 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
-    implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-database-ktx")
-    implementation("com.google.firebase:firebase-messaging-ktx")
-    implementation("com.google.firebase:firebase-storage-ktx")
 
     // Hilt
     implementation(libs.dagger.hilt.android)
     implementation(libs.androidx.runtime.livedata)
+    implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
+
+    // Указываем зависимости Firebase без версий
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+
+    // Остальные зависимости
+    implementation(libs.dagger.hilt.android)
     kapt(libs.dagger.hilt.compiler)
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 

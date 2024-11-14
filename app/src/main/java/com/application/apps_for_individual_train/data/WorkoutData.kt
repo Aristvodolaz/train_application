@@ -5,5 +5,6 @@ data class WorkoutData(
     val name: String = "",
     val category: String = "",
     val duration: Int = 0,
-    val description: String = ""
+    val description: String = "",
+    val difficulty: String  = ""
 )
