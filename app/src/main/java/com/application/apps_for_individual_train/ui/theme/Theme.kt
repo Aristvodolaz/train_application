@@ -9,28 +9,35 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+// Цвета для светлой темы
+private val LightColorScheme = lightColorScheme(
+    primary = Color(0xFF6200EE), // Фиолетовый
+    onPrimary = Color.White, // Белый для текста на фиолетовом фоне
+    secondary = Color(0xFF03DAC5), // Бирюзовый
+    onSecondary = Color.Black, // Черный для текста на бирюзовом фоне
+    tertiary = Color(0xFF018786), // Темно-бирюзовый
+    onTertiary = Color.White, // Белый для текста на темно-бирюзовом фоне
+    background = Color(0xFFF5F5F5), // Светло-серый
+    onBackground = Color.Black, // Черный текст на светлом фоне
+    surface = Color(0xFFFFFFFF), // Белый для карточек и поверхностей
+    onSurface = Color.Black // Черный текст на белом фоне
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+// Цвета для темной темы
+private val DarkColorScheme = darkColorScheme(
+    primary = Color(0xFFBB86FC), // Светло-фиолетовый
+    onPrimary = Color.Black, // Черный текст на светло-фиолетовом фоне
+    secondary = Color(0xFF03DAC5), // Бирюзовый
+    onSecondary = Color.Black, // Черный текст на бирюзовом фоне
+    tertiary = Color(0xFF03DAC5), // Бирюзовый
+    onTertiary = Color.Black, // Черный текст на темно-бирюзовом фоне
+    background = Color(0xFF121212), // Темно-серый (почти черный)
+    onBackground = Color.White, // Белый текст на темном фоне
+    surface = Color(0xFF1E1E1E), // Темный серый для поверхностей
+    onSurface = Color.White // Белый текст на темно-сером фоне
 )
 
 @Composable
@@ -45,7 +52,6 @@ fun Apps_for_individual_trainTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }

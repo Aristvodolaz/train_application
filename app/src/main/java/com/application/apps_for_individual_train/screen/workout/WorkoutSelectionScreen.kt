@@ -1,4 +1,5 @@
-package com.application.apps_for_individual_train.screen
+package com.application.apps_for_individual_train.screen.workout
+
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.application.apps_for_individual_train.data.WorkoutData
+import com.application.apps_for_individual_train.screen.Screen
 import com.application.apps_for_individual_train.viewModel.WorkoutSelectionViewModel
 
 @Composable
@@ -26,24 +28,21 @@ fun WorkoutSelectionScreen(
     category: String,
     viewModel: WorkoutSelectionViewModel = hiltViewModel()
 ) {
-    // Запускает загрузку данных, когда экран открыт
+    // Запуск загрузки данных при открытии экрана
     LaunchedEffect(category) {
-        viewModel.loadWorkoutsByCategory(category)
+         println(category)
+     viewModel.loadWorkoutsByCategory(category)
+//    viewModel.addWorkoutStubDataRealtimeDatabase()
     }
 
-    // Наблюдение за состоянием тренировок и статусом загрузки
     val workouts by viewModel.workouts.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-
-    // Заглушки для тренировок, если список пуст
-    val placeholderWorkouts = getPlaceholderWorkouts(category)
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Workouts in $category",
@@ -56,20 +55,11 @@ fun WorkoutSelectionScreen(
         if (isLoading) {
             CircularProgressIndicator()
         } else if (workouts.isEmpty()) {
-            // Используем заглушки, если нет данных
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(placeholderWorkouts) { workout ->
-                    WorkoutItem(
-                        workout = workout,
-                        onClick = {
-                            navController.navigate("${Screen.WorkoutScreen.route}/${workout.id}")
-                        }
-                    )
-                }
-            }
+            Text(
+                text = "No workouts available for this category.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -79,6 +69,7 @@ fun WorkoutSelectionScreen(
                     WorkoutItem(
                         workout = workout,
                         onClick = {
+                            println("Заглушка ИД " + workout.id + " " + workout.videoUrl)
                             navController.navigate("${Screen.WorkoutScreen.route}/${workout.id}")
                         }
                     )
@@ -88,23 +79,7 @@ fun WorkoutSelectionScreen(
     }
 }
 
-// Функция генерации заглушек для тренировок
-fun getPlaceholderWorkouts(category: String): List<WorkoutData> {
-    val durations = listOf(10, 20, 30, 40, 50, 60)
-    val difficulties = listOf("Beginner", "Intermediate", "Advanced")
 
-    return durations.flatMap { duration ->
-        difficulties.map { difficulty ->
-            WorkoutData(
-                id = "$category-$duration-$difficulty",
-                name = "$difficulty $category Workout",
-                description = "A $difficulty level workout for $category, lasting $duration minutes.",
-                duration = duration,
-                difficulty = difficulty
-            )
-        }
-    }
-}
 
 @Composable
 fun WorkoutItem(workout: WorkoutData, onClick: () -> Unit) {
@@ -113,9 +88,6 @@ fun WorkoutItem(workout: WorkoutData, onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(4.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-        ),
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
         Column(

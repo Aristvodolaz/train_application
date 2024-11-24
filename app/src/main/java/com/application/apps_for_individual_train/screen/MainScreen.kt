@@ -27,38 +27,68 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.SportsGymnastics
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import com.application.apps_for_individual_train.screen.profile.ChangePasswordScreen
+import com.application.apps_for_individual_train.screen.profile.EditProfileScreen
+import com.application.apps_for_individual_train.screen.profile.LoginScreen
+import com.application.apps_for_individual_train.screen.profile.ProfileScreen
+import com.application.apps_for_individual_train.screen.profile.RegisterScreen
+import com.application.apps_for_individual_train.screen.workout.WorkoutScreen
+import com.application.apps_for_individual_train.screen.workout.WorkoutSelectionScreen
+
 
 @Composable
 fun MainScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background( Brush.linearGradient(
+                colors = listOf(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                )
+            )),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Заголовок экрана
         Text(
             text = "Workout Categories",
-            fontSize = 24.sp,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(16.dp)
         )
         Spacer(modifier = Modifier.height(16.dp))
+
         WorkoutCategories(navController)
     }
 }
 
-
 @Composable
 fun WorkoutCategories(navController: NavController) {
-    val categories = listOf("Cardio", "Strength", "Yoga", "Pilates", "HIIT", "Crossfit")
+    val categories = listOf(
+        "Cardio" to Icons.Default.FitnessCenter,
+        "Strength" to Icons.Default.FitnessCenter,
+        "Yoga" to Icons.Default.SelfImprovement,
+        "Pilates" to Icons.Default.SportsGymnastics,
+        "HIIT" to Icons.Default.FitnessCenter,
+        "Crossfit" to Icons.Default.FitnessCenter
+    )
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(categories) { category ->
+        items(categories) { (category, icon) ->
             CategoryCard(
                 category = category,
+                icon = icon,
                 onClick = {
                     navController.navigate(Screen.WorkoutSelectionScreen.createRoute(category))
                 }
@@ -67,64 +97,64 @@ fun WorkoutCategories(navController: NavController) {
     }
 }
 
-
 @Composable
-fun CategoryCard(category: String, onClick: () -> Unit) {
-    val backgroundColor = MaterialTheme.colorScheme.surfaceVariant
-    val categoryIcon = when (category) {
-        "Cardio" -> Icons.Default.FitnessCenter
-        "Yoga" -> Icons.Default.SelfImprovement
-        // Add more icons for other categories if available
-        else -> Icons.Default.FitnessCenter
-    }
-
-    Card(
+fun CategoryCard(category: String, icon: ImageVector, onClick: () -> Unit) {
+    Box(
         modifier = Modifier
+            .padding(horizontal = 8.dp, vertical = 4.dp)
             .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-            .shadow(6.dp, RoundedCornerShape(16.dp)), // Added shadow for elevation
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(6.dp),
-        onClick = onClick
     ) {
-        // Gradient background
-        Box(
+        Card(
             modifier = Modifier
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
-                        )
-                    )
-                )
-                .padding(16.dp)
+                .fillMaxWidth()
+                .shadow(
+                    elevation = 10.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    clip = false
+                ),
+            shape = RoundedCornerShape(16.dp),
+            onClick = onClick,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            elevation = CardDefaults.cardElevation(10.dp) // Высота тени
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                            )
+                        )
+                    )
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Icon with padding
                 Icon(
-                    imageVector = categoryIcon,
+                    imageVector = icon,
                     contentDescription = "$category icon",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
-                        .size(40.dp)
-                        .padding(end = 8.dp) // Added right padding here
+                        .size(50.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f))
+                        .padding(10.dp)
                 )
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Texts
-                Column {
+                Column(
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Text(
                         text = category,
                         style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Explore $category workouts",
                         style = MaterialTheme.typography.bodyMedium,
@@ -135,6 +165,7 @@ fun CategoryCard(category: String, onClick: () -> Unit) {
         }
     }
 }
+
 
 
 @Composable
@@ -150,7 +181,6 @@ fun AppNavHost(
         Screen.MainScreen.route,
         Screen.WorkoutSelectionScreen.route,
         Screen.ProfileScreen.route
-        // Add other main screen routes here as needed
     )
 
     Scaffold(
@@ -166,7 +196,7 @@ fun AppNavHost(
             startDestination = Screen.LoginScreen.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // Authentication Screens
+
             composable(Screen.LoginScreen.route) {
                 LoginScreen(
                     onLoginClick = { login, password ->
@@ -205,7 +235,6 @@ fun AppNavHost(
                 )
             }
 
-            // Main Application Screens with Bottom Navigation
             composable(Screen.MainScreen.route) { MainScreen(navController) }
             composable(
                 route = Screen.WorkoutSelectionScreen.route,
@@ -215,16 +244,24 @@ fun AppNavHost(
                 WorkoutSelectionScreen(navController = navController, category = category)
             }
 
+            composable("editProfile") { EditProfileScreen(navController) }
+            composable("changePassword") { ChangePasswordScreen(navController) }
+            composable("workoutDetail/{workoutId}") { backStackEntry ->
+                val workoutId = backStackEntry.arguments?.getString("workoutId")
+                workoutId?.let {
+                    WorkoutScreen(workoutId = it)
+                }
+            }
+
             composable(
-                route = "workout_screen/{workoutId}",  // Define this route properly
+                route = "workout_screen/{workoutId}",
                 arguments = listOf(navArgument("workoutId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val workoutId = backStackEntry.arguments?.getString("workoutId") ?: "1"
-                WorkoutScreen(navController = navController, workoutId = workoutId)
+                WorkoutScreen( workoutId = workoutId)
             }
 
             composable(Screen.ProfileScreen.route) { ProfileScreen(navController) }
-            // Add other main screens here as needed
         }
     }
 }
