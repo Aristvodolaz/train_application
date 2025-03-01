@@ -65,6 +65,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    // DataStore для хранения настроек
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     // Hilt
     implementation(libs.dagger.hilt.android)
@@ -110,7 +112,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.3")
 
     // FFmpeg для обработки аудио
-    implementation("com.arthenica:mobile-ffmpeg-full:4.4.LTS")
+    implementation ("com.arthenica:ffmpeg-kit-full:6.0-2")
 
     // Тестовые зависимости
     testImplementation("junit:junit:4.13.2")

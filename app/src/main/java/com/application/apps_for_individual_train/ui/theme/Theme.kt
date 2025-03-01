@@ -9,42 +9,82 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-// Цвета для светлой темы
+// Черно-серо-зеленая цветовая схема для светлой темы
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF6200EE), // Фиолетовый
-    onPrimary = Color.White, // Белый для текста на фиолетовом фоне
-    secondary = Color(0xFF03DAC5), // Бирюзовый
-    onSecondary = Color.Black, // Черный для текста на бирюзовом фоне
-    tertiary = Color(0xFF018786), // Темно-бирюзовый
-    onTertiary = Color.White, // Белый для текста на темно-бирюзовом фоне
-    background = Color(0xFFF5F5F5), // Светло-серый
-    onBackground = Color.Black, // Черный текст на светлом фоне
-    surface = Color(0xFFFFFFFF), // Белый для карточек и поверхностей
-    onSurface = Color.Black // Черный текст на белом фоне
+    primary = Green700,
+    onPrimary = Color.White,
+    primaryContainer = Green200,
+    onPrimaryContainer = Green900,
+    
+    secondary = GreenA400,
+    onSecondary = Color.Black,
+    secondaryContainer = GreenA200.copy(alpha = 0.3f),
+    onSecondaryContainer = Green900,
+    
+    tertiary = GreenA700,
+    onTertiary = Color.Black,
+    tertiaryContainer = GreenA200.copy(alpha = 0.5f),
+    onTertiaryContainer = Green900,
+    
+    background = Gray100,
+    onBackground = Gray900,
+    
+    surface = Color.White,
+    onSurface = Gray900,
+    
+    surfaceVariant = Gray200,
+    onSurfaceVariant = Gray700,
+    
+    error = ErrorRed,
+    onError = Color.White,
+    
+    outline = Gray600
 )
 
-// Цвета для темной темы
+// Черно-серо-зеленая цветовая схема для темной темы
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFFBB86FC), // Светло-фиолетовый
-    onPrimary = Color.Black, // Черный текст на светло-фиолетовом фоне
-    secondary = Color(0xFF03DAC5), // Бирюзовый
-    onSecondary = Color.Black, // Черный текст на бирюзовом фоне
-    tertiary = Color(0xFF03DAC5), // Бирюзовый
-    onTertiary = Color.Black, // Черный текст на темно-бирюзовом фоне
-    background = Color(0xFF121212), // Темно-серый (почти черный)
-    onBackground = Color.White, // Белый текст на темном фоне
-    surface = Color(0xFF1E1E1E), // Темный серый для поверхностей
-    onSurface = Color.White // Белый текст на темно-сером фоне
+    primary = GreenA400,
+    onPrimary = DarkBlack,
+    primaryContainer = Green800,
+    onPrimaryContainer = GreenA200,
+    
+    secondary = GreenA700,
+    onSecondary = DarkBlack,
+    secondaryContainer = Green900,
+    onSecondaryContainer = GreenA200,
+    
+    tertiary = BrightGreen,
+    onTertiary = DarkBlack,
+    tertiaryContainer = Green700,
+    onTertiaryContainer = GreenA200,
+    
+    background = DarkBlack,
+    onBackground = TextWhite,
+    
+    surface = DarkGray,
+    onSurface = TextWhite,
+    
+    surfaceVariant = MediumGray,
+    onSurfaceVariant = TextGray,
+    
+    error = ErrorRed,
+    onError = DarkBlack,
+    
+    outline = Gray600
 )
 
 @Composable
 fun Apps_for_individual_trainTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Отключаем динамические цвета по умолчанию для сохранения нашей цветовой схемы
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -54,6 +94,16 @@ fun Apps_for_individual_trainTheme(
         }
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
+    }
+    
+    // Устанавливаем цвет статус-бара и навигационной панели
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = if (darkTheme) DarkBlack.toArgb() else colorScheme.primary.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+        }
     }
 
     MaterialTheme(

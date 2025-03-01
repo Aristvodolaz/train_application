@@ -1,19 +1,24 @@
 package com.application.apps_for_individual_train.screen.workout
 
-
 import android.util.Log
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -24,9 +29,7 @@ import androidx.media3.ui.PlayerView
 import com.application.apps_for_individual_train.data.WorkoutData
 import com.application.apps_for_individual_train.viewModel.WorkoutViewModel
 import com.google.firebase.storage.FirebaseStorage
-
-import androidx.compose.foundation.layout.*
-
+import androidx.compose.ui.graphics.SolidColor
 
 @Composable
 fun WorkoutScreen(
@@ -42,24 +45,37 @@ fun WorkoutScreen(
 
     val placeholderWorkout = WorkoutData(
         id = "placeholder",
-        name = "Sample Workout",
-        description = "This is a sample workout for display purposes.",
+        name = "Пример тренировки",
+        description = "Это пример тренировки для отображения.",
         duration = 30,
-        difficulty = "Intermediate"
+        difficulty = "Средний"
     )
     val currentWorkout = workout ?: placeholderWorkout
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (isLoading) {
-            CircularProgressIndicator()
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.size(48.dp),
+                    strokeWidth = 4.dp
+                )
+            }
         } else {
             WorkoutHeader(currentWorkout)
-            WorkoutDescription(currentWorkout)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
             WorkoutVideoPlayer(
                 videoUrl = currentWorkout.videoUrl,
                 isWorkoutRunning = isWorkoutRunning,
@@ -73,7 +89,17 @@ fun WorkoutScreen(
                     )
                 }
             )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
             WorkoutProgress(progress = workoutProgress)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            WorkoutDescription(currentWorkout)
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
             WorkoutControls(
                 isWorkoutRunning = isWorkoutRunning,
                 onStart = { isWorkoutRunning = true },
@@ -90,29 +116,58 @@ fun WorkoutScreen(
 
 @Composable
 fun WorkoutProgress(progress: Float) {
-    Column(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Workout Progress",
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
+            .padding(vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 4.dp
         )
-        Box(contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(
-                progress = progress,
-                modifier = Modifier.size(100.dp),
-                strokeWidth = 6.dp,
-                color = MaterialTheme.colorScheme.primary
-            )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text(
-                text = "${(progress * 100).toInt()}%",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary
+                text = "Прогресс тренировки",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            Box(contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.size(120.dp),
+                    strokeWidth = 8.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+                
+                Text(
+                    text = "${(progress * 100).toInt()}%",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
         }
     }
@@ -145,11 +200,7 @@ fun WorkoutVideoPlayer(
             val duration = exoPlayer.duration.takeIf { it > 0 } ?: 1
             val progress = currentPosition.toFloat() / duration
 
-
-            Log.d("WorkoutVideoPlayer", "Current Position: $currentPosition ms, Duration: $duration ms, Progress: $progress")
-
             onProgressUpdate(progress)
-
             kotlinx.coroutines.delay(500L) // Обновляем каждые 500 мс
         }
     }
@@ -171,25 +222,60 @@ fun WorkoutVideoPlayer(
         }
     }
 
-
-    Box(modifier = Modifier.fillMaxWidth()) {
-        if (videoUrlState != null) {
-            AndroidView(
-                factory = { PlayerView(context).apply { player = exoPlayer } },
-                modifier = Modifier.height(200.dp)
-            )
-        } else {
-            Text(
-                text = "Video not available",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.align(Alignment.Center)
-            )
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 4.dp
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (videoUrlState != null) {
+                AndroidView(
+                    factory = { 
+                        PlayerView(context).apply { 
+                            player = exoPlayer 
+                            useController = true
+                            setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        } 
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.size(48.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text(
+                        text = "Видео недоступно",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
         }
     }
 }
-
-
-
 
 fun fetchVideoUrl(storagePath: String, onResult: (String?) -> Unit) {
     if (storagePath.startsWith("gs://")) {
@@ -206,41 +292,97 @@ fun fetchVideoUrl(storagePath: String, onResult: (String?) -> Unit) {
 
 @Composable
 fun WorkoutHeader(currentWorkout: WorkoutData) {
-    Text(
-        text = currentWorkout.name,
-        style = MaterialTheme.typography.headlineMedium,
-        modifier = Modifier.padding(vertical = 8.dp)
-    )
-    AssistChip(
-        onClick = {},
-        label = { Text("Difficulty: ${currentWorkout.difficulty}") },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        modifier = Modifier.padding(vertical = 4.dp)
-    )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = currentWorkout.name,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+        
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Whatshot,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(20.dp)
+            )
+            
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            SuggestionChip(
+                onClick = {},
+                label = { 
+                    Text(
+                        text = "Сложность: ${currentWorkout.difficulty}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    ) 
+                },
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    labelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ),
+                border = null
+            )
+            
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            SuggestionChip(
+                onClick = {},
+                label = { 
+                    Text(
+                        text = "Длительность: ${currentWorkout.duration} мин",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    ) 
+                },
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    labelColor = MaterialTheme.colorScheme.onTertiaryContainer
+                ),
+                border = null
+            )
+        }
+    }
 }
 
 @Composable
 fun WorkoutDescription(currentWorkout: WorkoutData) {
-    Card(
+    ElevatedCard(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 4.dp
+        )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Text(
-                text = "Description",
+                text = "Описание",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 12.dp)
             )
+            
             Text(
-                text = currentWorkout.description,
+                text = currentWorkout.description ?: "Нет описания",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = 24.sp
             )
         }
     }
@@ -256,28 +398,109 @@ fun WorkoutControls(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Button(
+        ElevatedButton(
             onClick = onStart,
             modifier = Modifier.weight(1f),
-            enabled = !isWorkoutRunning
+            enabled = !isWorkoutRunning,
+            colors = ButtonDefaults.elevatedButtonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            elevation = ButtonDefaults.elevatedButtonElevation(
+                defaultElevation = 4.dp,
+                pressedElevation = 8.dp
+            )
         ) {
-            Text("Resume")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                Text(
+                    text = "Продолжить",
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
-        Button(
+        
+        ElevatedButton(
             onClick = onPause,
             modifier = Modifier.weight(1f),
-            enabled = isWorkoutRunning
+            enabled = isWorkoutRunning,
+            colors = ButtonDefaults.elevatedButtonColors(
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            elevation = ButtonDefaults.elevatedButtonElevation(
+                defaultElevation = 4.dp,
+                pressedElevation = 8.dp
+            )
         ) {
-            Text("Pause")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Pause,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                Text(
+                    text = "Пауза",
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
-        Button(
-            onClick = onReset,
-            modifier = Modifier.weight(1f)
+    }
+    
+    Spacer(modifier = Modifier.height(8.dp))
+    
+    OutlinedButton(
+        onClick = onReset,
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.error
+        ),
+        border = ButtonDefaults.outlinedButtonBorder.copy(
+            brush = SolidColor(MaterialTheme.colorScheme.error)
+        )
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(vertical = 8.dp)
         ) {
-            Text("Restart")
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+            
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            Text(
+                text = "Начать заново",
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

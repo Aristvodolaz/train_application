@@ -2,6 +2,7 @@ package com.application.apps_for_individual_train.screen
 
 import androidx.compose.foundation.background
 import com.application.apps_for_individual_train.viewModel.AuthViewModel
+import com.application.apps_for_individual_train.viewModel.ThemeViewModel
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -46,21 +47,16 @@ fun MainScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background( Brush.linearGradient(
-                colors = listOf(
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
-                )
-            )),
+            .background(MaterialTheme.colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Заголовок экрана
+        // Заголовок экрана с новым стилем
         Text(
-            text = "Workout Categories",
+            text = "Категории тренировок",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(16.dp)
         )
@@ -73,16 +69,18 @@ fun MainScreen(navController: NavController) {
 @Composable
 fun WorkoutCategories(navController: NavController) {
     val categories = listOf(
-        "Cardio" to Icons.Default.FitnessCenter,
-        "Strength" to Icons.Default.FitnessCenter,
-        "Yoga" to Icons.Default.SelfImprovement,
-        "Pilates" to Icons.Default.SportsGymnastics,
+        "Кардио" to Icons.Default.FitnessCenter,
+        "Силовые" to Icons.Default.FitnessCenter,
+        "Йога" to Icons.Default.SelfImprovement,
+        "Пилатес" to Icons.Default.SportsGymnastics,
         "HIIT" to Icons.Default.FitnessCenter,
-        "Crossfit" to Icons.Default.FitnessCenter
+        "Кроссфит" to Icons.Default.FitnessCenter
     )
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(start = 16.dp, end = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(categories) { (category, icon) ->
@@ -99,68 +97,70 @@ fun WorkoutCategories(navController: NavController) {
 
 @Composable
 fun CategoryCard(category: String, icon: ImageVector, onClick: () -> Unit) {
-    Box(
+    ElevatedCard(
         modifier = Modifier
-            .padding(horizontal = 8.dp, vertical = 4.dp)
             .fillMaxWidth()
+            .height(120.dp),
+        onClick = onClick,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 4.dp,
+            pressedElevation = 8.dp
+        ),
+        shape = RoundedCornerShape(16.dp)
     ) {
-        Card(
+        Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .shadow(
-                    elevation = 10.dp,
-                    shape = RoundedCornerShape(16.dp),
-                    clip = false
-                ),
-            shape = RoundedCornerShape(16.dp),
-            onClick = onClick,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            ),
-            elevation = CardDefaults.cardElevation(10.dp) // Высота тени
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
+            // Иконка категории с градиентным фоном
+            Box(
                 modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
                     .background(
-                        Brush.linearGradient(
+                        Brush.verticalGradient(
                             colors = listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.tertiary
                             )
                         )
-                    )
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                    ),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = "$category icon",
-                    tint = MaterialTheme.colorScheme.primary,
+                    contentDescription = category,
                     modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f))
-                        .padding(10.dp)
+                        .padding(16.dp)
+                        .size(32.dp),
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column(
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = category,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Explore $category workouts",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            // Название категории
+            Column {
+                Text(
+                    text = category,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Text(
+                    text = "Нажмите для просмотра",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -172,6 +172,7 @@ fun CategoryCard(category: String, icon: ImageVector, onClick: () -> Unit) {
 fun AppNavHost(
     navController: NavHostController,
     authViewModel: AuthViewModel,
+    themeViewModel: ThemeViewModel,
     modifier: Modifier = Modifier
 ) {
     val currentBackStackEntry = navController.currentBackStackEntryAsState()
@@ -180,7 +181,9 @@ fun AppNavHost(
     val showBottomBar = currentRoute in listOf(
         Screen.MainScreen.route,
         Screen.WorkoutSelectionScreen.route,
-        Screen.ProfileScreen.route
+        Screen.ProfileScreen.route,
+        Screen.StatisticsScreen.route,
+        Screen.NutritionScreen.route
     )
 
     Scaffold(
@@ -236,6 +239,15 @@ fun AppNavHost(
             }
 
             composable(Screen.MainScreen.route) { MainScreen(navController) }
+            
+            composable(Screen.StatisticsScreen.route) { 
+                com.application.apps_for_individual_train.screen.workout.StatisticsScreen() 
+            }
+            
+            composable(Screen.NutritionScreen.route) { 
+                com.application.apps_for_individual_train.screen.nutrition.NutritionScreen() 
+            }
+            
             composable(
                 route = Screen.WorkoutSelectionScreen.route,
                 arguments = listOf(navArgument("category") { type = NavType.StringType })
@@ -261,7 +273,9 @@ fun AppNavHost(
                 WorkoutScreen( workoutId = workoutId)
             }
 
-            composable(Screen.ProfileScreen.route) { ProfileScreen(navController) }
+            composable(Screen.ProfileScreen.route) { 
+                ProfileScreen(navController = navController, themeViewModel = themeViewModel) 
+            }
         }
     }
 }

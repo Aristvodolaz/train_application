@@ -3,6 +3,8 @@ package com.application.apps_for_individual_train.screen.profile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,92 +21,166 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.application.apps_for_individual_train.ui.theme.ThemeSwitcher
+import com.application.apps_for_individual_train.viewModel.ThemeViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
 
 @Composable
-fun ProfileScreen(navController: NavController) {
+fun ProfileScreen(navController: NavController, themeViewModel: ThemeViewModel) {
     val user = FirebaseAuth.getInstance().currentUser
     val userId = user?.uid ?: return
 
     var userProgress by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    val isDarkTheme = themeViewModel.isDarkTheme.collectAsState(initial = false)
 
     LaunchedEffect(userId) {
         val progress = fetchUserProgressWithNames(userId)
         userProgress = progress
     }
 
-    Column(
+    // Функция для обработки нажатия на элемент тренировки
+    fun onWorkoutClick(workoutName: String) {
+        // Здесь можно добавить навигацию к деталям тренировки
+        // Например: navController.navigate("workout_details/$workoutName")
+    }
+
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
-                )
-            ),
+            .background(MaterialTheme.colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+        contentPadding = PaddingValues(bottom = 32.dp)
     ) {
-        Spacer(modifier = Modifier.height(32.dp))
+        item { Spacer(modifier = Modifier.height(32.dp)) }
 
         // Profile picture
-        ProfilePicture(icon = Icons.Filled.Person)
+        item { ProfilePicture(icon = Icons.Filled.Person) }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        item { Spacer(modifier = Modifier.height(16.dp)) }
 
         // User information card
-        UserInfoCard(
-            displayName = user.displayName ?: "User Name",
-            email = user.email ?: "user@example.com"
-        )
+        item {
+            UserInfoCard(
+                displayName = user?.displayName ?: "User Name",
+                email = user?.email ?: "user@example.com"
+            )
+        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        item { Spacer(modifier = Modifier.height(24.dp)) }
+        
+        // Theme switcher
+        item {
+            ThemeSwitcher(
+                darkTheme = isDarkTheme.value,
+                onThemeChanged = { themeViewModel.setDarkTheme(it) }
+            )
+        }
+        
+        item { Spacer(modifier = Modifier.height(24.dp)) }
 
-        // Workout progress list with navigation
-        WorkoutProgressList(
-            progressMap = userProgress,
-            onWorkoutClick = { workoutId ->
-                navController.navigate("workoutDetail/$workoutId")
+        // Workout progress header
+        item {
+            Text(
+                text = "Прогресс тренировок",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+
+        // Workout progress items
+        if (userProgress.isEmpty()) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Нет данных о тренировках",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Text(
+                            text = "Начните тренировки, чтобы увидеть свой прогресс",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        ProfileButton(
-            text = "Edit Profile",
-            icon = Icons.Default.Edit,
-            color = MaterialTheme.colorScheme.primary
-        ) {
-            navController.navigate("editProfile")
+        } else {
+            items(userProgress.toList()) { (workoutName, progress) ->
+                WorkoutProgressItem(
+                    workoutName = workoutName,
+                    progress = progress,
+                    onClick = { onWorkoutClick(workoutName) }
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        item { Spacer(modifier = Modifier.height(24.dp)) }
 
-        ProfileButton(
-            text = "Change Password",
-            icon = Icons.Default.Lock,
-            color = MaterialTheme.colorScheme.secondary
-        ) {
-            navController.navigate("changePassword")
+        item {
+            ProfileButton(
+                text = "Редактировать профиль",
+                icon = Icons.Default.Edit,
+                color = MaterialTheme.colorScheme.primary
+            ) {
+                navController.navigate("editProfile")
+            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        item { Spacer(modifier = Modifier.height(16.dp)) }
 
-        ProfileButton(
-            text = "Log Out",
-            icon = Icons.Default.ExitToApp,
-            color = MaterialTheme.colorScheme.error
-        ) {
-            FirebaseAuth.getInstance().signOut()
+        item {
+            ProfileButton(
+                text = "Изменить пароль",
+                icon = Icons.Default.Lock,
+                color = MaterialTheme.colorScheme.secondary
+            ) {
+                navController.navigate("changePassword")
+            }
+        }
+
+        item { Spacer(modifier = Modifier.height(16.dp)) }
+
+        item {
+            ProfileButton(
+                text = "Выйти",
+                icon = Icons.Default.ExitToApp,
+                color = MaterialTheme.colorScheme.error
+            ) {
+                FirebaseAuth.getInstance().signOut()
+            }
         }
     }
 }
-
-
 
 suspend fun fetchUserProgressWithNames(userId: String): Map<String, Int> {
     return try {
@@ -145,7 +221,10 @@ fun UserInfoCard(displayName: String, email: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        elevation = CardDefaults.cardElevation(6.dp)
+        elevation = CardDefaults.cardElevation(6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier
@@ -170,71 +249,58 @@ fun UserInfoCard(displayName: String, email: String) {
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
         }
     }
 }
 
 @Composable
-fun WorkoutProgressList(progressMap: Map<String, Int>, onWorkoutClick: (String) -> Unit) {
-    Column(
+fun WorkoutProgressItem(workoutName: String, progress: Int, onClick: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(onClick = onClick)
     ) {
-        Text(
-            text = "Workout Progress",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        progressMap.forEach { (workoutName, progress) ->
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .clickable { onWorkoutClick(workoutName) } // Handle click
-            ) {
-                Row(
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = workoutName,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                LinearProgressIndicator(
+                    progress = { progress / 100f },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(
-                            text = workoutName,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Progress: $progress%",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    CircularProgressIndicator(
-                        progress = progress / 100f,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp),
-                        strokeWidth = 4.dp
-                    )
-                }
+                        .width(100.dp)
+                        .height(8.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                Text(
+                    text = "$progress%",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
 }
-
 
 @Composable
 fun ProfilePicture(icon: ImageVector) {
@@ -245,29 +311,39 @@ fun ProfilePicture(icon: ImageVector) {
             .clip(CircleShape)
             .background(
                 Brush.radialGradient(
-                    colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.tertiary
+                    )
                 )
             )
     ) {
         Icon(
             imageVector = icon,
             contentDescription = "Profile Picture",
-            tint = Color.White,
-            modifier = Modifier.size(100.dp)
+            tint = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.size(80.dp)
         )
     }
 }
 
 @Composable
 fun ProfileButton(text: String, icon: ImageVector, color: Color, onClick: () -> Unit) {
-    Button(
+    ElevatedButton(
         onClick = onClick,
-        colors = ButtonDefaults.buttonColors(containerColor = color),
-        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.elevatedButtonColors(
+            containerColor = color,
+            contentColor = Color.White
+        ),
+        shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .height(48.dp)
+            .height(56.dp),
+        elevation = ButtonDefaults.elevatedButtonElevation(
+            defaultElevation = 4.dp,
+            pressedElevation = 8.dp
+        )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -277,9 +353,11 @@ fun ProfileButton(text: String, icon: ImageVector, color: Color, onClick: () -> 
                 imageVector = icon,
                 contentDescription = text,
                 tint = Color.White,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(24.dp)
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
             Text(
                 text = text,
                 fontSize = 16.sp,
