@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import com.application.apps_for_individual_train.data.ThemePreferences
 import com.application.apps_for_individual_train.screen.AppNavHost
 import com.application.apps_for_individual_train.screen.Screen
+import com.application.apps_for_individual_train.ui.theme.Apps_for_individual_trainTheme
 import com.application.apps_for_individual_train.viewModel.AuthViewModel
 import com.application.apps_for_individual_train.viewModel.ThemeViewModel
 import com.application.apps_for_individual_train.viewModel.ThemeViewModelFactory
@@ -29,30 +30,33 @@ class StartActivity : ComponentActivity() {
             val themeViewModel: ThemeViewModel = viewModel(
                 factory = ThemeViewModelFactory(themePreferences)
             )
+            val darkTheme = themeViewModel.isDarkTheme.collectAsState(initial = false)
             
-            val navController = rememberNavController()
-            val user by authViewModel.user.observeAsState()
-            val errorMessage by authViewModel.errorMessage.observeAsState()
+            Apps_for_individual_trainTheme(darkTheme = darkTheme.value) {
+                val navController = rememberNavController()
+                val user by authViewModel.user.observeAsState()
+                val errorMessage by authViewModel.errorMessage.observeAsState()
 
-            // Observe authentication state and navigate accordingly
-            LaunchedEffect(user) {
-                if (user != null) {
-                    navController.navigate(Screen.MainScreen.route) {
-                        popUpTo(Screen.LoginScreen.route) { inclusive = true }
-                    }
-                } else {
-                    navController.navigate(Screen.LoginScreen.route) {
-                        popUpTo(Screen.MainScreen.route) { inclusive = true }
+                // Observe authentication state and navigate accordingly
+                LaunchedEffect(user) {
+                    if (user != null) {
+                        navController.navigate(Screen.MainScreen.route) {
+                            popUpTo(Screen.LoginScreen.route) { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate(Screen.LoginScreen.route) {
+                            popUpTo(Screen.MainScreen.route) { inclusive = true }
+                        }
                     }
                 }
-            }
 
-            // Root navigation setup
-            AppNavHost(
-                navController = navController, 
-                authViewModel = authViewModel,
-                themeViewModel = themeViewModel
-            )
+                // Root navigation setup
+                AppNavHost(
+                    navController = navController, 
+                    authViewModel = authViewModel,
+                    themeViewModel = themeViewModel
+                )
+            }
         }
     }
 }
