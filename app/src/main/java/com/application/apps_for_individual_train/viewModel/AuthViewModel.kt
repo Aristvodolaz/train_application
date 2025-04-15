@@ -98,7 +98,36 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                // Save basic user data
                 realtimeDatabase.getReference("users").child(uid).setValue(userData).await()
+
+                // Initialize empty statistics for new user
+                val userStatsRef = realtimeDatabase.getReference("user_statistics").child(uid)
+                val initialStats = mapOf(
+                    "workouts_count" to "0",
+                    "hours_count" to "0",
+                    "calories_burned" to "0",
+                    "distance_covered" to "0"
+                )
+                userStatsRef.setValue(initialStats).await()
+
+                // Initialize empty nutrition data for new user
+                val userNutritionRef = realtimeDatabase.getReference("user_nutrition").child(uid)
+                val initialNutrition = mapOf(
+                    "water_intake" to 0,
+                    "water_goal" to 2500,
+                    "proteins" to 0,
+                    "carbs" to 0,
+                    "fats" to 0,
+                    "calories_consumed" to 0,
+                    "calories_goal" to 2000
+                )
+                userNutritionRef.setValue(initialNutrition).await()
+
+                // Initialize empty workout progress for new user
+                val userProgressRef = realtimeDatabase.getReference("user_progress").child(uid)
+                userProgressRef.setValue(mapOf<String, Int>()).await()
+
                 _errorMessage.postValue(null)
             } catch (e: Exception) {
                 _errorMessage.postValue(e.message)

@@ -32,11 +32,92 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+
+data class Meal(
+    val type: String,
+    val time: String,
+    val calories: Int,
+    val foods: List<Food>
+)
+
+data class Food(
+    val name: String,
+    val calories: Int,
+    val proteins: Int,
+    val carbs: Int,
+    val fats: Int
+)
 
 @Composable
 fun NutritionScreen() {
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+    
     var showAddMealDialog by remember { mutableStateOf(false) }
-    var meals by remember { mutableStateOf(sampleMeals) }
+    var meals by remember { mutableStateOf<List<Meal>>(emptyList()) }
+    
+    // Nutrition data state variables
+    var waterIntake by remember { mutableStateOf(0) }
+    var waterGoal by remember { mutableStateOf(2500) }
+    var proteins by remember { mutableStateOf(0) }
+    var carbs by remember { mutableStateOf(0) }
+    var fats by remember { mutableStateOf(0) }
+    var caloriesConsumed by remember { mutableStateOf(0) }
+    var caloriesGoal by remember { mutableStateOf(2000) }
+    
+    // Load user nutrition data if user is logged in
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            val userNutritionRef = FirebaseDatabase.getInstance().getReference("user_nutrition").child(userId)
+            userNutritionRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        waterIntake = snapshot.child("water_intake").getValue(Int::class.java) ?: 0
+                        waterGoal = snapshot.child("water_goal").getValue(Int::class.java) ?: 2500
+                        proteins = snapshot.child("proteins").getValue(Int::class.java) ?: 0
+                        carbs = snapshot.child("carbs").getValue(Int::class.java) ?: 0
+                        fats = snapshot.child("fats").getValue(Int::class.java) ?: 0
+                        caloriesConsumed = snapshot.child("calories_consumed").getValue(Int::class.java) ?: 0
+                        caloriesGoal = snapshot.child("calories_goal").getValue(Int::class.java) ?: 2000
+                        
+                        // Load meals data
+                        val mealsSnapshot = snapshot.child("meals")
+                        if (mealsSnapshot.exists()) {
+                            val mealsList = mutableListOf<Meal>()
+                            for (mealSnapshot in mealsSnapshot.children) {
+                                val type = mealSnapshot.child("type").getValue(String::class.java) ?: ""
+                                val time = mealSnapshot.child("time").getValue(String::class.java) ?: ""
+                                val calories = mealSnapshot.child("calories").getValue(Int::class.java) ?: 0
+                                
+                                val foodsList = mutableListOf<Food>()
+                                val foodsSnapshot = mealSnapshot.child("foods")
+                                for (foodSnapshot in foodsSnapshot.children) {
+                                    val name = foodSnapshot.child("name").getValue(String::class.java) ?: ""
+                                    val foodCalories = foodSnapshot.child("calories").getValue(Int::class.java) ?: 0
+                                    val foodProteins = foodSnapshot.child("proteins").getValue(Int::class.java) ?: 0
+                                    val foodCarbs = foodSnapshot.child("carbs").getValue(Int::class.java) ?: 0
+                                    val foodFats = foodSnapshot.child("fats").getValue(Int::class.java) ?: 0
+                                    
+                                    foodsList.add(Food(name, foodCalories, foodProteins, foodCarbs, foodFats))
+                                }
+                                
+                                mealsList.add(Meal(type, time, calories, foodsList))
+                            }
+                            meals = mealsList
+                        }
+                    }
+                }
+                
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle errors
+                }
+            })
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -60,17 +141,17 @@ fun NutritionScreen() {
             
             // Карточка с отслеживанием воды
             item {
-                WaterTrackingCard()
+                WaterTrackingCard(waterIntake = waterIntake, waterGoal = waterGoal)
             }
             
             // Карточка с калориями
             item {
-                CaloriesCard()
+                CaloriesCard(caloriesConsumed = caloriesConsumed, caloriesGoal = caloriesGoal)
             }
             
             // Карточка с макроэлементами
             item {
-                MacronutrientsCard()
+                MacronutrientsCard(proteins = proteins, carbs = carbs, fats = fats)
             }
             
             // Приемы пищи
@@ -85,14 +166,52 @@ fun NutritionScreen() {
             }
             
             // Динамический список приемов пищи
-            items(meals.size) { index ->
-                val meal = meals[index]
-                MealCard(
-                    mealType = meal.type,
-                    calories = meal.calories,
-                    time = meal.time,
-                    foods = meal.foods
-                )
+            if (meals.isEmpty()) {
+                item {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Нет данных о приемах пищи",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = "Добавьте прием пищи, чтобы отслеживать питание",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            } else {
+                items(meals.size) { index ->
+                    val meal = meals[index]
+                    MealCard(
+                        mealType = meal.type,
+                        calories = meal.calories,
+                        time = meal.time,
+                        foods = meal.foods
+                    )
+                }
             }
             
             // Кнопка добавления приема пищи
@@ -111,7 +230,33 @@ fun NutritionScreen() {
             AddMealDialog(
                 onDismiss = { showAddMealDialog = false },
                 onAddMeal = { newMeal ->
-                    meals = meals + newMeal
+                    val updatedMeals = meals + newMeal
+                    meals = updatedMeals
+                    
+                    // Save the new meal to Firebase
+                    if (userId != null) {
+                        val userMealsRef = FirebaseDatabase.getInstance().getReference("user_nutrition")
+                            .child(userId)
+                            .child("meals")
+                        
+                        val mealKey = userMealsRef.push().key ?: return@AddMealDialog
+                        
+                        val mealMap = mapOf(
+                            "type" to newMeal.type,
+                            "time" to newMeal.time,
+                            "calories" to newMeal.calories
+                        )
+                        
+                        userMealsRef.child(mealKey).setValue(mealMap)
+                        
+                        // Update calories consumed
+                        val userNutritionRef = FirebaseDatabase.getInstance().getReference("user_nutrition")
+                            .child(userId)
+                        
+                        userNutritionRef.child("calories_consumed")
+                            .setValue(caloriesConsumed + newMeal.calories)
+                    }
+                    
                     showAddMealDialog = false
                 }
             )
@@ -120,9 +265,7 @@ fun NutritionScreen() {
 }
 
 @Composable
-fun WaterTrackingCard() {
-    var waterIntake by remember { mutableStateOf(1200) } // в мл
-    val waterGoal = 2500 // в мл
+fun WaterTrackingCard(waterIntake: Int, waterGoal: Int) {
     val waterProgress = waterIntake.toFloat() / waterGoal
     
     val animatedProgress by animateFloatAsState(
@@ -282,11 +425,8 @@ fun WaterButton(amount: Int, onClick: () -> Unit) {
 }
 
 @Composable
-fun CaloriesCard() {
-    val consumedCalories = 1650
-    val burnedCalories = 450
-    val goalCalories = 2000
-    val remainingCalories = goalCalories - consumedCalories + burnedCalories
+fun CaloriesCard(caloriesConsumed: Int, caloriesGoal: Int) {
+    val remainingCalories = caloriesGoal - caloriesConsumed
     
     ElevatedCard(
         modifier = Modifier
@@ -317,23 +457,16 @@ fun CaloriesCard() {
             ) {
                 CalorieItem(
                     title = "Цель",
-                    value = goalCalories,
+                    value = caloriesGoal,
                     icon = Icons.Default.Flag,
                     color = MaterialTheme.colorScheme.primary
                 )
                 
                 CalorieItem(
                     title = "Потреблено",
-                    value = consumedCalories,
+                    value = caloriesConsumed,
                     icon = Icons.Default.Restaurant,
                     color = MaterialTheme.colorScheme.tertiary
-                )
-                
-                CalorieItem(
-                    title = "Сожжено",
-                    value = burnedCalories,
-                    icon = Icons.Default.LocalFireDepartment,
-                    color = Color(0xFFFF5722)
                 )
             }
             
@@ -381,11 +514,7 @@ fun CalorieItem(title: String, value: Int, icon: ImageVector, color: Color) {
 }
 
 @Composable
-fun MacronutrientsCard() {
-    val proteins = 120 // г
-    val carbs = 200 // г
-    val fats = 60 // г
-    
+fun MacronutrientsCard(proteins: Int, carbs: Int, fats: Int) {
     val proteinCalories = proteins * 4
     val carbsCalories = carbs * 4
     val fatsCalories = fats * 9
@@ -506,16 +635,16 @@ fun MacroItem(title: String, value: Int, percentage: Float, color: Color) {
 }
 
 @Composable
-fun MealCard(mealType: String, calories: Int, time: String, foods: List<String>) {
+fun MealCard(mealType: String, calories: Int, time: String, foods: List<Food>) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 8.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.elevatedCardElevation(
-            defaultElevation = 2.dp
+            defaultElevation = 4.dp
         )
     ) {
         Column(
@@ -526,65 +655,51 @@ fun MealCard(mealType: String, calories: Int, time: String, foods: List<String>)
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = when (mealType) {
-                            "Завтрак" -> Icons.Default.FreeBreakfast
-                            "Обед" -> Icons.Default.LunchDining
-                            "Ужин" -> Icons.Default.DinnerDining
-                            else -> Icons.Default.Restaurant
-                        },
-                        contentDescription = mealType,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
+                Column {
                     Text(
                         text = mealType,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                }
-                
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                    
                     Text(
                         text = time,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    Text(
-                        text = "$calories ккал",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
                 }
+                
+                Text(
+                    text = "$calories ккал",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
-            Divider()
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Column {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 foods.forEach { food ->
-                    Text(
-                        text = "• $food",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = food.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        
+                        Text(
+                            text = "${food.calories} ккал",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -687,115 +802,126 @@ fun NutritionTipsCard() {
     }
 }
 
-// Модель данных для приема пищи
-data class Meal(
-    val type: String,
-    val calories: Int,
-    val time: String,
-    val foods: List<String>
-)
-
-// Примеры приемов пищи
-val sampleMeals = listOf(
-    Meal(
-        type = "Завтрак",
-        calories = 450,
-        time = "08:30",
-        foods = listOf(
-            "Овсянка с фруктами - 300 ккал",
-            "Яйцо вареное - 70 ккал",
-            "Кофе с молоком - 80 ккал"
-        )
-    ),
-    Meal(
-        type = "Обед",
-        calories = 650,
-        time = "13:00",
-        foods = listOf(
-            "Куриная грудка - 200 ккал",
-            "Рис бурый - 150 ккал",
-            "Салат овощной - 100 ккал",
-            "Хлеб цельнозерновой - 100 ккал",
-            "Яблоко - 100 ккал"
-        )
-    ),
-    Meal(
-        type = "Ужин",
-        calories = 550,
-        time = "19:00",
-        foods = listOf(
-            "Рыба запеченная - 250 ккал",
-            "Овощи на пару - 100 ккал",
-            "Творог обезжиренный - 100 ккал",
-            "Чай зеленый - 0 ккал"
-        )
-    )
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddMealDialog(onDismiss: () -> Unit, onAddMeal: (Meal) -> Unit) {
-    var mealType by remember { mutableStateOf("Перекус") }
-    var mealTime by remember { mutableStateOf("12:00") }
-    var totalCalories by remember { mutableStateOf("0") }
-    var foodItems by remember { mutableStateOf("") }
-    
-    val mealTypes = listOf("Завтрак", "Обед", "Ужин", "Перекус")
-    var expandedMealType by remember { mutableStateOf(false) }
-    
+fun AddMealDialog(
+    onDismiss: () -> Unit,
+    onAddMeal: (Meal) -> Unit
+) {
+    var mealType by remember { mutableStateOf("Завтрак") }
+    var calories by remember { mutableStateOf("") }
+    var mealTime by remember { mutableStateOf(SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())) }
+    var foodText by remember { mutableStateOf("") }
+    var foods by remember { mutableStateOf<List<String>>(emptyList()) }
+
     Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp,
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .padding(24.dp)
                     .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "Добавить прием пищи",
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 
-                // Выбор типа приема пищи
+                // Тип приема пищи
                 ExposedDropdownMenuBox(
-                    expanded = expandedMealType,
-                    onExpandedChange = { expandedMealType = it }
+                    expanded = false,
+                    onExpandedChange = { }
                 ) {
                     OutlinedTextField(
                         value = mealType,
-                        onValueChange = {},
-                        readOnly = true,
+                        onValueChange = { mealType = it },
                         label = { Text("Тип приема пищи") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMealType)
-                        },
-                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor()
                     )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Время
+                OutlinedTextField(
+                    value = mealTime,
+                    onValueChange = { mealTime = it },
+                    label = { Text("Время") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Калории
+                OutlinedTextField(
+                    value = calories,
+                    onValueChange = { calories = it },
+                    label = { Text("Калории") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Продукты
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = foodText,
+                        onValueChange = { foodText = it },
+                        label = { Text("Продукт") },
+                        modifier = Modifier.weight(1f)
+                    )
                     
-                    ExposedDropdownMenu(
-                        expanded = expandedMealType,
-                        onDismissRequest = { expandedMealType = false }
+                    IconButton(
+                        onClick = {
+                            if (foodText.isNotBlank()) {
+                                foods = foods + foodText
+                                foodText = ""
+                            }
+                        },
+                        modifier = Modifier.padding(start = 8.dp)
                     ) {
-                        mealTypes.forEach { type ->
-                            DropdownMenuItem(
-                                text = { Text(text = type) },
-                                onClick = {
-                                    mealType = type
-                                    expandedMealType = false
-                                }
+                        Icon(
+                            imageVector = Icons.Outlined.Add,
+                            contentDescription = "Добавить продукт"
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Список добавленных продуктов
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 120.dp)
+                ) {
+                    foods.forEach { food ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "• $food",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
@@ -803,91 +929,47 @@ fun AddMealDialog(onDismiss: () -> Unit, onAddMeal: (Meal) -> Unit) {
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Время приема пищи
-                OutlinedTextField(
-                    value = mealTime,
-                    onValueChange = { mealTime = it },
-                    label = { Text("Время (HH:MM)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Schedule,
-                            contentDescription = null
-                        )
-                    }
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Калории
-                OutlinedTextField(
-                    value = totalCalories,
-                    onValueChange = { 
-                        if (it.isEmpty() || it.all { char -> char.isDigit() }) {
-                            totalCalories = it
-                        }
-                    },
-                    label = { Text("Общие калории") },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.LocalFireDepartment,
-                            contentDescription = null
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number
-                    )
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Список продуктов
-                OutlinedTextField(
-                    value = foodItems,
-                    onValueChange = { foodItems = it },
-                    label = { Text("Продукты (каждый с новой строки)") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Restaurant,
-                            contentDescription = null
-                        )
-                    }
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // Кнопки
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    ) {
                         Text("Отмена")
                     }
                     
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
                     Button(
                         onClick = {
-                            val calories = totalCalories.toIntOrNull() ?: 0
-                            val foods = foodItems.split("\n")
-                                .filter { it.isNotBlank() }
-                                .map { it.trim() }
+                            val caloriesInt = calories.toIntOrNull() ?: 0
                             
-                            val newMeal = Meal(
+                            // Convert string food items to Food objects
+                            val foodObjects = foods.map { foodName ->
+                                // Estimate calories per food item (in a real app, this would be from a database)
+                                val estimatedCalories = caloriesInt / foods.size
+                                Food(
+                                    name = foodName,
+                                    calories = estimatedCalories,
+                                    proteins = 0, // This would come from a food database in a real app
+                                    carbs = 0,    // This would come from a food database in a real app
+                                    fats = 0      // This would come from a food database in a real app
+                                )
+                            }
+                            
+                            val meal = Meal(
                                 type = mealType,
-                                calories = calories,
+                                calories = caloriesInt,
                                 time = mealTime,
-                                foods = foods
+                                foods = foodObjects
                             )
                             
-                            onAddMeal(newMeal)
+                            onAddMeal(meal)
                         },
-                        enabled = foodItems.isNotBlank() && totalCalories.isNotBlank()
+                        enabled = calories.isNotBlank() && foods.isNotEmpty()
                     ) {
                         Text("Добавить")
                     }

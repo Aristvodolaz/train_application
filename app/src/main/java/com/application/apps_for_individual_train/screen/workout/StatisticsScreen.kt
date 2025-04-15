@@ -26,11 +26,45 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
 fun StatisticsScreen() {
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+    
+    // State variables for user statistics
+    var workoutsCount by remember { mutableStateOf("0") }
+    var hoursCount by remember { mutableStateOf("0") }
+    var caloriesBurned by remember { mutableStateOf("0") }
+    var distanceCovered by remember { mutableStateOf("0") }
+    
+    // Load user statistics if user is logged in
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            val userStatsRef = FirebaseDatabase.getInstance().getReference("user_statistics").child(userId)
+            userStatsRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        workoutsCount = snapshot.child("workouts_count").getValue(String::class.java) ?: "0"
+                        hoursCount = snapshot.child("hours_count").getValue(String::class.java) ?: "0"
+                        caloriesBurned = snapshot.child("calories_burned").getValue(String::class.java) ?: "0"
+                        distanceCovered = snapshot.child("distance_covered").getValue(String::class.java) ?: "0"
+                    }
+                }
+                
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle errors
+                }
+            })
+        }
+    }
+    
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -59,13 +93,13 @@ fun StatisticsScreen() {
                 ) {
                     StatCard(
                         title = "Тренировок",
-                        value = "24",
+                        value = workoutsCount,
                         icon = Icons.Default.FitnessCenter,
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "Часов",
-                        value = "32",
+                        value = hoursCount,
                         icon = Icons.Default.Timer,
                         modifier = Modifier.weight(1f)
                     )
@@ -79,13 +113,13 @@ fun StatisticsScreen() {
                 ) {
                     StatCard(
                         title = "Калории",
-                        value = "12,450",
+                        value = caloriesBurned,
                         icon = Icons.Default.LocalFireDepartment,
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "Километры",
-                        value = "48",
+                        value = distanceCovered,
                         icon = Icons.Default.DirectionsRun,
                         modifier = Modifier.weight(1f)
                     )
@@ -117,7 +151,17 @@ fun StatisticsScreen() {
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        LineChart()
+                        if (userId != null) {
+                            LineChart()
+                        } else {
+                            Text(
+                                text = "Нет данных о прогрессе",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }
@@ -147,7 +191,17 @@ fun StatisticsScreen() {
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        PieChart()
+                        if (userId != null && workoutsCount != "0") {
+                            PieChart()
+                        } else {
+                            Text(
+                                text = "Нет данных о типах тренировок",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }
@@ -177,27 +231,37 @@ fun StatisticsScreen() {
                         
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        AchievementItem(
-                            title = "Марафонец",
-                            description = "Пробежать 10 км за одну тренировку",
-                            progress = 0.8f
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        AchievementItem(
-                            title = "Силач",
-                            description = "Выполнить 100 отжиманий за неделю",
-                            progress = 0.65f
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        AchievementItem(
-                            title = "Регулярность",
-                            description = "Тренироваться 5 дней подряд",
-                            progress = 1.0f
-                        )
+                        if (userId != null && (workoutsCount != "0" || hoursCount != "0" || caloriesBurned != "0" || distanceCovered != "0")) {
+                            AchievementItem(
+                                title = "Марафонец",
+                                description = "Пробежать 10 км за одну тренировку",
+                                progress = 0.8f
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            AchievementItem(
+                                title = "Силач",
+                                description = "Выполнить 100 отжиманий за неделю",
+                                progress = 0.65f
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            AchievementItem(
+                                title = "Регулярность",
+                                description = "Тренироваться 5 дней подряд",
+                                progress = 1.0f
+                            )
+                        } else {
+                            Text(
+                                text = "Выполните тренировки, чтобы получить достижения",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }
