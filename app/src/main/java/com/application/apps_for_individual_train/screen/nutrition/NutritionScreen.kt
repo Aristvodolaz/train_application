@@ -37,6 +37,9 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import android.util.Log
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 
 data class Meal(
     val type: String,
@@ -267,6 +270,7 @@ fun NutritionScreen() {
 @Composable
 fun WaterTrackingCard(waterIntake: Int, waterGoal: Int) {
     val waterProgress = waterIntake.toFloat() / waterGoal
+    val context = LocalContext.current
     
     val animatedProgress by animateFloatAsState(
         targetValue = waterProgress,
@@ -372,17 +376,80 @@ fun WaterTrackingCard(waterIntake: Int, waterGoal: Int) {
             ) {
                 WaterButton(
                     amount = 200,
-                    onClick = { waterIntake = (waterIntake + 200).coerceAtMost(waterGoal) }
+                    onClick = { 
+                        // Get current user
+                        val user = FirebaseAuth.getInstance().currentUser
+                        if (user != null) {
+                            val newIntake = (waterIntake + 200).coerceAtMost(waterGoal)
+                            
+                            // Update Firebase
+                            val userNutritionRef = FirebaseDatabase.getInstance()
+                                .getReference("user_nutrition")
+                                .child(user.uid)
+                            
+                            userNutritionRef.child("water_intake").setValue(newIntake)
+                                .addOnSuccessListener {
+                                    // Update widget after successful database update
+                                    try {
+                                        com.application.apps_for_individual_train.widget.WaterIntakeWidget.updateWidgets(context)
+                                    } catch (e: Exception) {
+                                        Log.e("WaterTracking", "Error updating widget: ${e.message}")
+                                    }
+                                }
+                        }
+                    }
                 )
                 
                 WaterButton(
                     amount = 300,
-                    onClick = { waterIntake = (waterIntake + 300).coerceAtMost(waterGoal) }
+                    onClick = { 
+                        // Get current user
+                        val user = FirebaseAuth.getInstance().currentUser
+                        if (user != null) {
+                            val newIntake = (waterIntake + 300).coerceAtMost(waterGoal)
+                            
+                            // Update Firebase
+                            val userNutritionRef = FirebaseDatabase.getInstance()
+                                .getReference("user_nutrition")
+                                .child(user.uid)
+                            
+                            userNutritionRef.child("water_intake").setValue(newIntake)
+                                .addOnSuccessListener {
+                                    // Update widget after successful database update
+                                    try {
+                                        com.application.apps_for_individual_train.widget.WaterIntakeWidget.updateWidgets(context)
+                                    } catch (e: Exception) {
+                                        Log.e("WaterTracking", "Error updating widget: ${e.message}")
+                                    }
+                                }
+                        }
+                    }
                 )
                 
                 WaterButton(
                     amount = 500,
-                    onClick = { waterIntake = (waterIntake + 500).coerceAtMost(waterGoal) }
+                    onClick = { 
+                        // Get current user
+                        val user = FirebaseAuth.getInstance().currentUser
+                        if (user != null) {
+                            val newIntake = (waterIntake + 500).coerceAtMost(waterGoal)
+                            
+                            // Update Firebase
+                            val userNutritionRef = FirebaseDatabase.getInstance()
+                                .getReference("user_nutrition")
+                                .child(user.uid)
+                            
+                            userNutritionRef.child("water_intake").setValue(newIntake)
+                                .addOnSuccessListener {
+                                    // Update widget after successful database update
+                                    try {
+                                        com.application.apps_for_individual_train.widget.WaterIntakeWidget.updateWidgets(context)
+                                    } catch (e: Exception) {
+                                        Log.e("WaterTracking", "Error updating widget: ${e.message}")
+                                    }
+                                }
+                        }
+                    }
                 )
             }
         }
@@ -391,8 +458,24 @@ fun WaterTrackingCard(waterIntake: Int, waterGoal: Int) {
 
 @Composable
 fun WaterButton(amount: Int, onClick: () -> Unit) {
+    val context = LocalContext.current
+    
     ElevatedButton(
-        onClick = onClick,
+        onClick = {
+            // Get current user
+            val user = FirebaseAuth.getInstance().currentUser
+            if (user != null) {
+                try {
+                    onClick()
+                    Toast.makeText(context, "Добавлено +$amount мл", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Log.e("WaterButton", "Error adding water: ${e.message}")
+                    Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(context, "Необходимо авторизоваться", Toast.LENGTH_SHORT).show()
+            }
+        },
         colors = ButtonDefaults.elevatedButtonColors(
             containerColor = Color(0xFF03A9F4),
             contentColor = Color.White
@@ -520,9 +603,10 @@ fun MacronutrientsCard(proteins: Int, carbs: Int, fats: Int) {
     val fatsCalories = fats * 9
     val totalCalories = proteinCalories + carbsCalories + fatsCalories
     
-    val proteinPercentage = proteinCalories.toFloat() / totalCalories
-    val carbsPercentage = carbsCalories.toFloat() / totalCalories
-    val fatsPercentage = fatsCalories.toFloat() / totalCalories
+    // Предотвращаем деление на ноль
+    val proteinPercentage = if (totalCalories > 0) proteinCalories.toFloat() / totalCalories else 0.33f
+    val carbsPercentage = if (totalCalories > 0) carbsCalories.toFloat() / totalCalories else 0.33f
+    val fatsPercentage = if (totalCalories > 0) fatsCalories.toFloat() / totalCalories else 0.34f
     
     ElevatedCard(
         modifier = Modifier
@@ -575,33 +659,52 @@ fun MacronutrientsCard(proteins: Int, carbs: Int, fats: Int) {
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Полоса с процентным соотношением
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(16.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            ) {
+            if (totalCalories > 0) {
+                // Полоса с процентным соотношением
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(16.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(proteinPercentage)
+                            .background(MaterialTheme.colorScheme.primary)
+                    )
+                    
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(carbsPercentage)
+                            .background(MaterialTheme.colorScheme.tertiary)
+                    )
+                    
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(fatsPercentage)
+                            .background(Color(0xFFFF9800))
+                    )
+                }
+            } else {
+                // Показываем пустую полосу, если нет данных
                 Box(
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .weight(proteinPercentage)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-                
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .weight(carbsPercentage)
-                        .background(MaterialTheme.colorScheme.tertiary)
-                )
-                
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .weight(fatsPercentage)
-                        .background(Color(0xFFFF9800))
-                )
+                        .fillMaxWidth()
+                        .height(16.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Нет данных о макроэлементах",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 10.sp
+                    )
+                }
             }
         }
     }
@@ -625,8 +728,11 @@ fun MacroItem(title: String, value: Int, percentage: Float, color: Color) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
+        // Защита от NaN
+        val displayPercentage = if (percentage.isNaN()) 0 else (percentage * 100).toInt()
+        
         Text(
-            text = "${(percentage * 100).toInt()}%",
+            text = "${displayPercentage}%",
             style = MaterialTheme.typography.bodySmall,
             color = color,
             fontWeight = FontWeight.Bold

@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.services)
     alias(libs.plugins.dagger.hilt)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.kotlin.ksp)
 }
 
 
@@ -64,12 +64,11 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-
+    implementation(libs.dagger.hilt.android) // Оставьте только один вызов
     // DataStore для хранения настроек
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     // Hilt
-    implementation(libs.dagger.hilt.android)
     implementation(libs.androidx.runtime.livedata)
     implementation(platform("com.google.firebase:firebase-bom:32.2.2"))
 
@@ -81,8 +80,7 @@ dependencies {
     implementation("com.google.firebase:firebase-storage-ktx")
 
     // Остальные зависимости
-    implementation(libs.dagger.hilt.android)
-    kapt(libs.dagger.hilt.compiler)
+    ksp("com.google.dagger:hilt-compiler:2.48")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Coil для загрузки изображений в Compose

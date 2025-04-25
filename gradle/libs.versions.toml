@@ -1,6 +1,5 @@
 [versions]
 agp = "8.5.1"
-hiltCompilerVersion = "2.48"
 kotlin = "1.9.0"
 coreKtx = "1.13.1"
 junit = "4.13.2"
@@ -11,7 +10,8 @@ activityCompose = "1.9.3"
 composeBom = "2024.04.01"
 firebaseFirestoreKtx = "25.1.1"
 google-services = "4.3.15"
-hilt = "2.47"  # Обновите на самую последнюю версию Hilt
+hilt = "2.48"
+hiltCompilerVersion = "2.48"
 runtimeLivedata = "1.7.5"
 firebaseStorageKtx = "21.0.1"
 firebaseAuthKtx = "23.1.0"
@@ -33,19 +33,12 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
-firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
-firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorageKtx" }
-room-runtime = { group = "androidx.room", name = "room-runtime", version = "2.5.0" }
-room-compiler = { group = "androidx.room", name = "room-compiler", version = "2.5.0" }
-room-ktx = { group = "androidx.room", name = "room-ktx", version = "2.5.0" }
-firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 dagger-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
-
+kotlin-ksp = { id = "com.google.devtools.ksp", version = "1.9.0-1.0.13" }
 
